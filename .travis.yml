@@ -11,3 +11,12 @@ cache:
     - $HOME/.gradle/caches
     - $HOME/.gradle/wrapper
 
+deploy:
+  provider: releases
+  api_key: ${github_api_key}
+  file_glob: true
+  file: buildGradle/libs/*
+  skip_cleanup: true
+  on:
+    tags: true
+#    condition: $DEPLOY_TO_GITHUB = true
