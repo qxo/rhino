@@ -303,6 +303,7 @@ public class ContextFactory
         throw new IllegalArgumentException(String.valueOf(featureIndex));
     }
 
+
     private boolean isDom3Present() {
         Class<?> nodeClass = Kit.classOrNull("org.w3c.dom.Node");
         if (nodeClass == null) return false;
@@ -316,6 +317,20 @@ public class ContextFactory
         }
     }
 
+    //flag for check only once
+    private static final boolean DOM3_CHECK_ONCE;
+    
+    //flag for force FEATURE_E4X force
+    private static Boolean e4xFactoryOff;
+    
+    private static org.mozilla.javascript.xml.XMLLib.Factory e4xFactory;
+    static {
+       ConfigProvider config = ConfigProvider.INST;
+       DOM3_CHECK_ONCE =
+           "true".equals(config.getProperty("rhino_cache_4_dom3_check_once", "true"));
+       e4xFactoryOff = "true".equals(config.getProperty("rhino_e4x_off"))
+            ? true : null;
+    }
     /**
      * Provides a default
      * {@link org.mozilla.javascript.xml.XMLLib.Factory XMLLib.Factory}
@@ -330,18 +345,30 @@ public class ContextFactory
     protected org.mozilla.javascript.xml.XMLLib.Factory
         getE4xImplementationFactory()
     {
-        // Must provide default implementation, rather than abstract method,
+       org.mozilla.javascript.xml.XMLLib.Factory ret = DOM3_CHECK_ONCE  ? 
+           e4xFactory :  null;
+       if( ret == null && e4xFactoryOff == null) {
+         // Must provide default implementation, rather than abstract method,
         // so that past implementors of ContextFactory do not fail at runtime
         // upon invocation of this method.
         // Note that the default implementation returns null if we
         // neither have XMLBeans nor a DOM3 implementation present.
 
         if (isDom3Present()) {
-            return org.mozilla.javascript.xml.XMLLib.Factory.create(
+            ret= org.mozilla.javascript.xml.XMLLib.Factory.create(
                 "org.mozilla.javascript.xmlimpl.XMLLibImpl"
             );
+            if(DOM3_CHECK_ONCE ) {
+               e4xFactory = ret;
+            }
+        } else {
+            ret =  null;
         }
-        return null;
+        if(DOM3_CHECK_ONCE ) {
+           e4xFactoryOff = false;
+        }
+       }
+        return ret;
     }
 
 
