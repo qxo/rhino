@@ -6,6 +6,8 @@
 
 package org.mozilla.javascript;
 
+import java.util.List;
+
 /**
  * This class reflects Java packages into the JavaScript environment.  We
  * lazily reflect classes and subpackages, and use a caching/sharing
@@ -92,10 +94,10 @@ public class NativeJavaTopPackage
         // We want to get a real alias, and not a distinct JavaPackage
         // with the same packageName, so that we share classes and top
         // that are underneath.
-        String[] topNames = ScriptRuntime.getTopPackageNames();
-        NativeJavaPackage[] topPackages = new NativeJavaPackage[topNames.length];
-        for (int i=0; i < topNames.length; i++) {
-            topPackages[i] = (NativeJavaPackage)top.get(topNames[i], top);
+        List<String> topNames = ScriptRuntime.getTopPackageNameList();
+        NativeJavaPackage[] topPackages = new NativeJavaPackage[topNames.size()];
+        for (int i=0; i < topPackages.length; i++) {
+            topPackages[i] = (NativeJavaPackage)top.get(topNames.get(i), top);
         }
 
         // It's safe to downcast here since initStandardObjects takes
@@ -107,8 +109,8 @@ public class NativeJavaTopPackage
         }
         getClass.exportAsScopeProperty();
         global.defineProperty("Packages", top, ScriptableObject.DONTENUM);
-        for (int i=0; i < topNames.length; i++) {
-            global.defineProperty(topNames[i], topPackages[i],
+        for (int i=0; i < topPackages.length; i++) {
+            global.defineProperty(topNames.get(i), topPackages[i],
                                   ScriptableObject.DONTENUM);
         }
     }

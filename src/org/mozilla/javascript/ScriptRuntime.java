@@ -9,8 +9,13 @@ package org.mozilla.javascript;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import org.mozilla.javascript.ast.FunctionNode;
 import org.mozilla.javascript.v8dtoa.DoubleConversion;
@@ -289,20 +294,40 @@ public class ScriptRuntime {
         new LazilyLoadedCtor(s, "JavaImporter",
                 "org.mozilla.javascript.ImporterTopLevel", sealed, true);
 
-        for (String packageName : getTopPackageNames()) {
+        for (String packageName : getTopPackageNameList()) {
             new LazilyLoadedCtor(s, packageName,
                     "org.mozilla.javascript.NativeJavaTopPackage", sealed, true);
         }
 
         return s;
     }
-
-    static String[] getTopPackageNames() {
-        // Include "android" top package if running on Android
-        return "Dalvik".equals(System.getProperty("java.vm.name")) ?
-            new String[] { "java", "javax", "org", "com", "edu", "net", "android" } :
-            new String[] { "java", "javax", "org", "com", "edu", "net" };
+    static final List<String> TOP_PACKAGE_NAMES;
+    static {
+       final String[] pnames;
+       final String tmp = ConfigProvider.INST.getProperty("rhino_top_package_names");
+       if( tmp!=null && tmp.length()>0 ) {
+          pnames = tmp.split("[, ;]+");
+       }else {
+         // Include "android" top package if running on Android
+         pnames="Dalvik".equals(System.getProperty("java.vm.name")) ?
+               new String[] { "java", "javax", "org", "com", "edu", "net", "android" } :
+               new String[] { "java", "javax", "org", "com", "edu", "net" };
+       }
+       Set<String> pset = new LinkedHashSet<String>();
+       for (String packageName : pnames) {
+           pset.add(packageName);
+       }
+       final List<String> list = new ArrayList<String>(pset);
+       TOP_PACKAGE_NAMES = Collections.unmodifiableList(list);
     }
+    @Deprecated
+    static String[] getTopPackageNames() {
+        return TOP_PACKAGE_NAMES.toArray(new String[0]);
+    }
+    static List<String> getTopPackageNameList() {
+        return TOP_PACKAGE_NAMES;
+    }
+    
 
     public static ScriptableObject getLibraryScopeOrNull(Scriptable scope)
     {
